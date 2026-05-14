@@ -1,0 +1,17 @@
+name = "FDHelmoltzSolver"
+uuid = "a8e3295d-89e8-4b4f-a448-5f2c64bcc7b5"
+version = "0.1.0"
+
+[deps]
+FDGrids = "28eb41cd-435a-4ede-8bdb-f2685fc03e8c"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+
+[compat]
+StaticArrays = "1.9.18"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
