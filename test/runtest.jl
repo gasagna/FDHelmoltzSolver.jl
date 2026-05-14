@@ -1,4 +1,5 @@
 using FDHelmoltzSolver
+using FDGrids
 using LinearAlgebra
 using Test
 

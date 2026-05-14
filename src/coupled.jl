@@ -17,8 +17,9 @@ struct CoupledHelmoltzSolver{T, H<:HelmoltzSolver, DT<:DiffMatrix, V<:AbstractVe
      D::DT           # first-order differentiation matrix for boundary derivative evaluation
     vs::NTuple{3, V} # temporary storage vectors
     function CoupledHelmoltzSolver(xs::AbstractVector, width::Int, ::Type{T}=Float64) where {T}
-        hu = HelmoltzSolver(xs, width, T)
-        hv = HelmoltzSolver(xs, width, T)
+        D2 = DiffMatrix(xs, width, 2; eltype=Float64)
+        hu = HelmoltzSolver(D2, T)
+        hv = HelmoltzSolver(copy(D2), T)
         D  = DiffMatrix(xs, width, 1; eltype=Float64)
         vs = ntuple(i->zeros(T, length(xs)), 3)
         return new{T, typeof(hu), typeof(D), Vector{T}}(hu, hv, D, vs)

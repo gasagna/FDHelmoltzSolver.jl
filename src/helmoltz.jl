@@ -9,17 +9,11 @@ export HelmoltzSolver, solve!, update!
 struct HelmoltzSolver{T, AT<:DiffMatrix{T}, DT<:DiffMatrix}
     A::AT # problem matrix that will be factorised
     D::DT # second order diff matrix (to avoid recomputing it)
-    # Construct a solver for a Helmoltz problem on the grid specified by
-    # points `xs` (assumed increasing). Use a finite difference stencil of
-    # width `width`, corresponding to an order of accuracy `width-1` in most
-    # cases. We assume we need to solve a problem where the coefficients
-    # are of type `T`, e.g. ComplexF64 or Dual{Float64}.
-    function HelmoltzSolver(xs::AbstractVector, width::Int, ::Type{T}=Float64) where {T}
-        # create diff matrices. A gets modified and factorised
-        # while D is simply stored to avoid recomputing it once A
-        # has been factorised if problem coefficients are changed.
-        A = DiffMatrix(xs, width, 2; eltype=T)
-        D = DiffMatrix(xs, width, 2; eltype=Float64)
+    # Construct a solver from a second-order DiffMatrix `D`. `A` is an
+    # uninitialised copy of `D` with element type `T` that will be overwritten
+    # and factorised on each call to `update!`.
+    function HelmoltzSolver(D::DiffMatrix, ::Type{T}=Float64) where {T}
+        A = similar(D, T)
         return new{T, typeof(A), typeof(D)}(A, D)
     end
 end

@@ -20,7 +20,7 @@
     width = 7
     y     = collect(range(-1, 1; length=N))
 
-    h = HelmoltzSolver(y, width)
+    h = HelmoltzSolver(DiffMatrix(y, width, 2))
 
     for (f, u_exact, u_l, u_r, θ₀, θ₁) in (
             (y -> exp.(y),                y -> exp.(y),   exp(-1), exp(1), 3,  2),
