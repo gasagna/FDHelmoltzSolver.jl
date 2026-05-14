@@ -11,7 +11,7 @@ export CoupledHelmoltzSolver
 # using a high-order finite difference method with an influence matrix technique,
 # and return the solution `v`, overwriting the input argument `r`.
 
-struct CoupledHelmoltzSolver{T, H<:HelmoltzSolver, DT<:DiffMatrix, V<:AbstractVector{T}}
+struct CoupledHelmoltzSolver{T, H<:HelmoltzSolver, DT<:AbstractMatrix, V<:AbstractVector{T}}
     hu::H            # helmoltz solver for the u variable
     hv::H            # helmoltz solver for the v variable
      D::DT           # first-order differentiation matrix for boundary derivative evaluation
