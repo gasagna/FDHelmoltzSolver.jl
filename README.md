@@ -1,14 +1,10 @@
 <p align="center">
-  <img src="assets/logo.png" alt="FDHelmoltzSolver.jl logo" width="760">
+  <img src="assets/logo.svg" alt="FDHelmoltzSolver.jl logo" width="760">
 </p>
 
-<h1 align="center">FDHelmoltzSolver.jl</h1>
+# FDHelmoltzSolver.jl
 
-<p align="center">
-  <strong>Fast in-place solvers for one-dimensional Helmholtz boundary value problems.</strong><br>
-  Built on high-order banded finite-difference operators from
-  <a href="https://github.com/gasagna/FDGrids.jl">FDGrids.jl</a>.
-</p>
+Fast in-place solvers for one-dimensional Helmholtz boundary value problems discretised with high-order banded finite-difference operators from [FDGrids.jl](https://github.com/gasagna/FDGrids.jl).
 
 ## Solvers
 
