@@ -1,38 +1,35 @@
-using FDHelmoltzSolver
 using BenchmarkTools
-using FFTW
+using FDHelmoltzSolver
+using FDGrids
+using LinearAlgebra
+using Printf
 
-# solve this problem
-#       / θ₀ u''(y) - θ₁ u(y)        = r(y)
-#      |  θ₂ v''(y) - θ₃ v(y) - u(y) = 0
-#       \ v(±1) = v'(±1) = 0
+# ── Grid sizes and stencil widths to benchmark ────────────────────────────────
+const Ns   = (64, 128, 256, 512, 1024)
+const widths = (3, 5, 7)
+const θs   = (1.0, 2.0, 1.5, 0.5)   # (θ₀, θ₁, θ₂, θ₃)
 
-# v = cos(π*y) + 1
-# u = (-θ₂π^2 - θ₃) * cos(πy) - θ₃ = β * cos(πy) - θ₃
-# r = (-θ₀βπ^2 - θ₁β) * cos(πy) + θ₁θ₃
+# ── Header ────────────────────────────────────────────────────────────────────
+@printf "\n%-6s  %-5s  %12s  %6s  %12s  %6s\n" "N" "width" "update! (ns)" "alloc" "solve! (ns)" "alloc"
+println(repeat('─', 64))
 
-# with these coefficients
-θ₀, θ₁, θ₂, θ₃ = 1, 2, 3, 4
+for N in Ns, width in widths
+    xs = collect(range(-1, 1; length=N))
+    D₂ = DiffMatrix(xs, width, 2)
+    D₁ = DiffMatrix(xs, width, 1)
+    r  = randn(N)
 
-# degree of the polynomial should be enough for all cases
-P = 121
+    solver = CoupledHelmoltzSolver(D₂, D₁)
+    update!(solver, θs)              # prime before benchmarking solve!
 
-# chebychev points
-y = cos.(π*(0:P)/P)
+    b_update = @benchmark update!($solver, $θs)               evals=1
+    b_solve  = @benchmark solve!($solver, v) setup=(v=copy($r)) evals=1
 
-# functions for the solution
-β = (-θ₂*π^2 - θ₃)
-rfun(y) = (-θ₀*β*π^2 - θ₁*β) * cos(π*y) + θ₁*θ₃
-sol(y) = cos(π*y) + 1
+    t_update = minimum(b_update).time
+    t_solve  = minimum(b_solve).time
+    a_update = minimum(b_update).allocs
+    a_solve  = minimum(b_solve).allocs
 
-# coefficients of the chebychev expansion of the function exp(y)
-r = ChebCoeffs(FFTW.r2r(rfun.(y), FFTW.REDFT00)/P)
-r[0] /= 2
-
-# create solver
-h = CoupledHelmoltzSolver(P)
-
-@btime FDHelmoltzSolver._ddy($r, Val(:left))
-
-# and update coefficients
-@btime solve!($h, (1, 2, 3, 4), $r)
+    @printf "%-6d  %-5d  %12.1f  %6d  %12.1f  %6d\n" N width t_update a_update t_solve a_solve
+end
+println()
