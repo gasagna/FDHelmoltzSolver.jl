@@ -1,6 +1,14 @@
-# FDHelmoltzSolver.jl
+<p align="center">
+  <img src="assets/logo.png" alt="FDHelmoltzSolver.jl logo" width="760">
+</p>
 
-Fast in-place solvers for one-dimensional Helmholtz boundary value problems discretised with high-order banded finite-difference operators from [FDGrids.jl](https://github.com/gasagna/FDGrids.jl).
+<h1 align="center">FDHelmoltzSolver.jl</h1>
+
+<p align="center">
+  <strong>Fast in-place solvers for one-dimensional Helmholtz boundary value problems.</strong><br>
+  Built on high-order banded finite-difference operators from
+  <a href="https://github.com/gasagna/FDGrids.jl">FDGrids.jl</a>.
+</p>
 
 ## Solvers
 
@@ -53,6 +61,6 @@ solve!(solver, r)                      # r overwritten with v
 
 Both solvers are allocation-free after construction. `update!` assembles and LU-factorises in O(N·W²) time; `solve!` runs in O(N·W) time, where N is the grid size and W the stencil half-width. The system matrix coefficients are stored in the banded layout of `DiffMatrix` and factorised by the no-pivot banded LU routines in FDGrids.jl.
 
-The figure below shows minimum wall-clock time (via BenchmarkTools) across grid sizes N = 32–2048 and stencil widths W = 3, 5, 7. Both operations scale linearly with N.
+The figure below shows minimum wall-clock time in nanoseconds (via BenchmarkTools) across grid sizes N = 32–2048 and stencil widths W = 3, 5, 7. Both operations scale linearly with N. Benchmarks run on an Apple M5, 16 GB RAM, Julia 1.12.6.
 
 ![benchmark](assets/benchmark.png)

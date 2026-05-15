@@ -24,13 +24,13 @@ for w in widths
 
         h = HelmoltzSolver(D₂)
         update!(h, θ₀, θ₁)
-        push!(h_update[w], minimum(@benchmark update!($h, $θ₀, $θ₁)              evals=1).time * 1e-3)
-        push!(h_solve[w],  minimum(@benchmark solve!($h, v, 0.0, 0.0) setup=(v=copy($r)) evals=1).time * 1e-3)
+        push!(h_update[w], minimum(@benchmark update!($h, $θ₀, $θ₁)                    evals=1).time)
+        push!(h_solve[w],  minimum(@benchmark solve!($h, v, 0.0, 0.0) setup=(v=copy($r))).time)
 
         solver = CoupledHelmoltzSolver(D₂, D₁)
         update!(solver, θs)
-        push!(c_update[w], minimum(@benchmark update!($solver, $θs)              evals=1).time * 1e-3)
-        push!(c_solve[w],  minimum(@benchmark solve!($solver, v) setup=(v=copy($r)) evals=1).time * 1e-3)
+        push!(c_update[w], minimum(@benchmark update!($solver, $θs)                    evals=1).time)
+        push!(c_solve[w],  minimum(@benchmark solve!($solver, v) setup=(v=copy($r))).time)
     end
 end
 
@@ -44,10 +44,11 @@ rcParams["font.size"]    = 9
 rcParams["axes.spines.top"]   = false
 rcParams["axes.spines.right"] = false
 
-fig, axes = subplots(2, 2; figsize=(7, 5), sharex=true)
-fig.subplots_adjust(hspace=0.35, wspace=0.35)
+fig, axes = subplots(2, 2; figsize=(7, 5))
+fig.subplots_adjust(hspace=0.45, wspace=0.35)
 
-Ns_arr = collect(Ns)
+Ns_arr  = collect(Ns)
+Ns_str  = string.(Ns)
 
 titles = ["HelmoltzSolver — update!" "HelmoltzSolver — solve!";
           "CoupledHelmoltzSolver — update!" "CoupledHelmoltzSolver — solve!"]
@@ -62,9 +63,12 @@ for (row, col) in Iterators.product(1:2, 1:2)
     end
     ax.set_title(titles[row, col]; fontsize=9)
     ax.set_xlabel("N"; fontsize=8)
-    ax.set_ylabel("time (μs)"; fontsize=8)
-    ax.tick_params(labelsize=8)
-    ax.grid(true; which="both", linestyle=":", linewidth=0.4, alpha=0.6)
+    ax.set_ylabel("time (ns)"; fontsize=8)
+    ax.set_xticks(Ns_arr)
+    ax.set_xticklabels(Ns_str; rotation=45, ha="right")
+    ax.xaxis.set_tick_params(which="minor", bottom=false)
+    ax.tick_params(labelsize=7)
+    ax.grid(true; which="major", linestyle=":", linewidth=0.4, alpha=0.6)
     if row == 1 && col == 2
         ax.legend(; fontsize=8, frameon=false)
     end
