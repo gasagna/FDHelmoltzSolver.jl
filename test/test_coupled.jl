@@ -20,7 +20,7 @@
         rfun(x) = (-θ₀*β*π^2 - θ₁*β)*cos(π*x) + θ₁*θ₃
         vsol(x) = cos(π*x) + 1
 
-        solver = CoupledHelmoltzSolver(xs, width)
+        solver = CoupledHelmoltzSolver(DiffMatrix(xs, width, 2), DiffMatrix(xs, width, 1))
         update!(solver, (θ₀, θ₁, θ₂, θ₃))
 
         r = rfun.(xs)
