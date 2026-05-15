@@ -81,14 +81,13 @@ each `solve!` call.
 
 # Constructor
 
-    CoupledHelmoltzSolver(D₂, D₁, [T=Float64])
+    CoupledHelmoltzSolver(D₂::DiffMatrix, D₁::DiffMatrix, [T=Float64])
 
-Build a solver from a pre-constructed second-order differentiation matrix `D₂`
-and a first-order matrix `D₁`. Both are typically `DiffMatrix` objects from
-`FDGrids.jl` built on the same grid with the same stencil width. `D₁` is
-stored as a read-only reference; `D₂` is stored inside each `HelmoltzSolver`
-as a read-only reference stencil, and each solver allocates its own working
-copy for the LU factors.
+Build a solver from a second-order `DiffMatrix` `D₂` and a first-order
+`DiffMatrix` `D₁`, both built on the same grid with the same stencil width.
+`D₁` is stored as a read-only reference; `D₂` is stored inside each
+`HelmoltzSolver` as a read-only reference stencil, and each solver allocates
+its own working copy for the LU factors.
 
 # Examples
 
@@ -109,13 +108,13 @@ solve!(solver, r)             # r is overwritten with the solution v
 See also: [`update!(::CoupledHelmoltzSolver, ::NTuple)`](@ref),
 [`solve!(::CoupledHelmoltzSolver, ::AbstractVector)`](@ref)
 """
-struct CoupledHelmoltzSolver{T, H<:HelmoltzSolver, DT<:AbstractMatrix, V<:AbstractVector{T}}
-    hu    :: H                  # Helmholtz solver for the u equation
-    hv    :: H                  # Helmholtz solver for the v equation
-    D₁    :: DT                 # first-order differentiation matrix
-    vs    :: NTuple{3, V}       # scratch vectors: vₚ (per-solve), v₊ and v₋ (per-update)
+struct CoupledHelmoltzSolver{T, H<:HelmoltzSolver, DT<:DiffMatrix, V<:AbstractVector{T}}
+    hu    :: H                   # Helmholtz solver for the u equation
+    hv    :: H                   # Helmholtz solver for the v equation
+    D₁    :: DT                  # first-order differentiation matrix
+    vs    :: NTuple{3, V}        # scratch vectors: vₚ (per-solve), v₊ and v₋ (per-update)
     A_inf :: MMatrix{2, 2, T, 4} # precomputed 2×2 influence matrix, filled by update!
-    function CoupledHelmoltzSolver(D₂::AbstractMatrix, D₁::AbstractMatrix, ::Type{T}=Float64) where {T}
+    function CoupledHelmoltzSolver(D₂::DiffMatrix, D₁::DiffMatrix, ::Type{T}=Float64) where {T}
         hu    = HelmoltzSolver(D₂, T)
         hv    = HelmoltzSolver(D₂, T)
         vs    = ntuple(i->zeros(T, size(D₂, 1)), 3)

@@ -48,11 +48,9 @@ become simply `u[1] = u_l` and `u[N] = u_r`.
 
 # Constructor
 
-    HelmoltzSolver(D₂::AbstractMatrix, [T=Float64])
+    HelmoltzSolver(D₂::DiffMatrix, [T=Float64])
 
-Build a solver from a pre-constructed second-order differentiation matrix `D₂`.
-Any `AbstractMatrix` is accepted; in practice `D₂` is a `DiffMatrix` from
-`FDGrids.jl` so that `lu!` and `ldiv!` dispatch to the fast banded routines.
+Build a solver from a pre-constructed second-order `DiffMatrix` `D₂`.
 `D₂` is stored as the reference stencil and is never modified. The working
 matrix `A` is allocated via `similar(D₂, T)` and overwritten on the first call
 to `update!` before any solve.
@@ -74,11 +72,11 @@ solve!(h, r, exp(-1), exp(1))      # solve in-place; r is overwritten with u
 
 See also: [`update!`](@ref), [`solve!`](@ref)
 """
-struct HelmoltzSolver{T, AT<:AbstractMatrix{T}, DT<:AbstractMatrix, LT}
+struct HelmoltzSolver{T, AT<:DiffMatrix{T}, DT<:DiffMatrix, LT}
     A  :: AT
     D₂ :: DT
     lu :: LT    # DiffMatrixLU wrapping A; shares A.coeffs — ldiv! uses this
-    function HelmoltzSolver(D₂::AbstractMatrix, ::Type{T}=Float64) where {T}
+    function HelmoltzSolver(D₂::DiffMatrix, ::Type{T}=Float64) where {T}
         # Allocate A as an uninitialised DiffMatrix of element type T with the
         # same stencil width and grid size as D₂. A will be overwritten in full
         # on every update! call, so there is no need to zero-initialise it here.
