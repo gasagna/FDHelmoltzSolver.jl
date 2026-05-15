@@ -75,5 +75,5 @@ for (row, col) in Iterators.product(1:2, 1:2)
 end
 
 fig.savefig(joinpath(@__DIR__, "..", "assets", "benchmark.png");
-            dpi=150, bbox_inches="tight")
+            dpi=300, bbox_inches="tight")
 println("Saved assets/benchmark.png")
