@@ -130,11 +130,12 @@ update!(h, 0.0, -1.0)  # identity:        u = -r  (trivial but valid)
 function update!(h::HelmoltzSolver{T}, θ₀::Real, θ₁::Real) where {T}
     N = size(h.A, 1)
 
-    # Build the interior operator θ₀ D - θ₁ I by broadcasting θ₀ onto every
-    # stencil coefficient of D, then subtracting θ₁ from each diagonal entry.
-    # Modifying only the diagonal avoids a second pass over the full matrix and
-    # keeps the operation O(N·WIDTH) rather than O(N²).
-    h.A .= θ₀ .* h.D
+    # Build the interior operator θ₀ D - θ₁ I by scaling and copying the
+    # stencil coefficients, then subtracting θ₁ from each diagonal entry.
+    # Operating directly on the underlying Vector avoids the DiffMatrix
+    # broadcast machinery (_bc_arg per element) and lets the compiler emit
+    # a SIMD-optimised scalar-vector multiply.
+    @inbounds h.A.coeffs .= T(θ₀) .* h.D.coeffs
     for i in 1:N
         h.A[i, i] -= θ₁
     end

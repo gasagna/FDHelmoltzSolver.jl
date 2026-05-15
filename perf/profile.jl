@@ -3,6 +3,7 @@ using FDHelmoltzSolver
 using FDGrids
 using LinearAlgebra
 
+const count = 500000
 const N     = 512
 const WIDTH = 7
 const θ₀, θ₁, θ₂, θ₃ = 1.0, 2.0, 1.5, 0.5
@@ -42,7 +43,7 @@ Profile.print(format=:flat, sortedby=:count, mincount=5)
 
 # ── Profile CoupledHelmoltzSolver.update! ────────────────────────────────────
 Profile.clear()
-@profile for _ in 1:5_000; update!(solver, θs); end
+@profile for _ in 1:count; update!(solver, θs); end
 
 println()
 println("=" ^ 72)
@@ -53,7 +54,7 @@ Profile.print(format=:flat, sortedby=:count, mincount=5)
 # ── Profile CoupledHelmoltzSolver.solve! ─────────────────────────────────────
 v = copy(r)
 Profile.clear()
-@profile for _ in 1:5_000; solve!(solver, v); end
+@profile for _ in 1:count; solve!(solver, v); end
 
 println()
 println("=" ^ 72)
