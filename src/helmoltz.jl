@@ -142,11 +142,8 @@ function update!(h::HelmoltzSolver{T}, θ₀::Real, θ₁::Real) where {T}
     # Enforce Dirichlet boundary conditions using the tau (row-replacement)
     # method: replace the first and last rows with canonical basis vectors so
     # that the linear system directly imposes u[1] = u_l and u[N] = u_r.
-    # DiffMatrix.setindex! silently ignores writes outside the compact stencil
-    # band, which are already structural zeros, so broadcasting a length-N
-    # basis vector into a row is safe and correct.
-    h.A[1, :] .= basis_vector(1, N, T)
-    h.A[N, :] .= basis_vector(N, N, T)
+    h.A[1, :] .= zero(T); h.A[1, 1] = one(T)
+    h.A[N, :] .= zero(T); h.A[N, N] = one(T)
 
     # Factorise h.A in-place with a no-pivoting banded LU routine. This
     # overwrites the compact stencil coefficients with the LU factors and
