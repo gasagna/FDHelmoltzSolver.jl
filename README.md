@@ -51,4 +51,8 @@ solve!(solver, r)                      # r overwritten with v
 
 ## Performance
 
-Both solvers are allocation-free after construction. `update!` assembles and LU-factorises in O(N·W²) time; `solve!` runs in O(N·W) time, where N is the grid size and W the stencil half-width. The system matrix coefficients are stored in the compact banded layout of `DiffMatrix` and factorised by the no-pivot banded LU routines in FDGrids.jl.
+Both solvers are allocation-free after construction. `update!` assembles and LU-factorises in O(N·W²) time; `solve!` runs in O(N·W) time, where N is the grid size and W the stencil half-width. The system matrix coefficients are stored in the banded layout of `DiffMatrix` and factorised by the no-pivot banded LU routines in FDGrids.jl.
+
+The figure below shows minimum wall-clock time (via BenchmarkTools) across grid sizes N = 32–2048 and stencil widths W = 3, 5, 7. Both operations scale linearly with N.
+
+![benchmark](assets/benchmark.png)
