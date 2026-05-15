@@ -18,11 +18,11 @@ vectors of values at the grid points used to construct the solver.
 # Discretisation
 
 The second derivative `u''` is approximated by a compact high-order finite
-difference stencil stored in the `DiffMatrix` field `D`. On each call to
+difference stencil stored in the `DiffMatrix` field `D₂`. On each call to
 `update!`, the system matrix
 
 ```
-    A = θ₀ D - θ₁ I
+    A = θ₀ D₂ - θ₁ I
 ```
 
 is assembled into the working copy `A` and then factorised in-place by a
@@ -33,28 +33,28 @@ become simply `u[1] = u_l` and `u[N] = u_r`.
 
 # Fields
 
-- `A` — working copy of the system matrix; overwritten on every `update!` call
-         with `θ₀ D - θ₁ I` (interior rows) and identity rows (boundary rows),
-         then replaced in-place by its LU factors.
-- `D` — the second-order finite-difference matrix built from the grid; never
-         modified after construction and reused across `update!` calls.
+- `A`  — working copy of the system matrix; overwritten on every `update!` call
+          with `θ₀ D₂ - θ₁ I` (interior rows) and identity rows (boundary rows),
+          then replaced in-place by its LU factors.
+- `D₂` — the second-order finite-difference matrix built from the grid; never
+          modified after construction and reused across `update!` calls.
 
 # Type parameters
 
 - `T`  — element type of the system matrix `A` (e.g. `Float64`, `ComplexF64`).
 - `AT` — concrete matrix type of `A` (must support in-place `lu!` and `ldiv!`).
-- `DT` — concrete matrix type of `D` (typically `DiffMatrix{Float64}`, since
+- `DT` — concrete matrix type of `D₂` (typically `DiffMatrix{Float64}`, since
           grid geometry is always real, but any `AbstractMatrix` is accepted).
 
 # Constructor
 
-    HelmoltzSolver(D::AbstractMatrix, [T=Float64])
+    HelmoltzSolver(D₂::AbstractMatrix, [T=Float64])
 
-Build a solver from a pre-constructed second-order differentiation matrix `D`.
-Any `AbstractMatrix` is accepted; in practice `D` is a `DiffMatrix` from
+Build a solver from a pre-constructed second-order differentiation matrix `D₂`.
+Any `AbstractMatrix` is accepted; in practice `D₂` is a `DiffMatrix` from
 `FDGrids.jl` so that `lu!` and `ldiv!` dispatch to the fast banded routines.
-`D` is stored as the reference stencil and is never modified. The working
-matrix `A` is allocated via `similar(D, T)` and overwritten on the first call
+`D₂` is stored as the reference stencil and is never modified. The working
+matrix `A` is allocated via `similar(D₂, T)` and overwritten on the first call
 to `update!` before any solve.
 
 # Examples
@@ -63,10 +63,10 @@ to `update!` before any solve.
 using FDHelmoltzSolver, FDGrids, LinearAlgebra
 
 xs = collect(range(-1, 1; length=201))
-D  = DiffMatrix(xs, 7, 2)          # 7-point (6th-order) second-derivative matrix
+D₂ = DiffMatrix(xs, 7, 2)         # 7-point (6th-order) second-derivative matrix
 
-h  = HelmoltzSolver(D)             # Float64 solver
-update!(h, 3.0, 2.0)               # assemble and factorise  3D² - 2I
+h  = HelmoltzSolver(D₂)           # Float64 solver
+update!(h, 3.0, 2.0)              # assemble and factorise  3D₂ - 2I
 
 r  = exp.(xs)                      # right-hand side: exp(y)
 solve!(h, r, exp(-1), exp(1))      # solve in-place; r is overwritten with u
@@ -76,15 +76,15 @@ See also: [`update!`](@ref), [`solve!`](@ref)
 """
 struct HelmoltzSolver{T, AT<:AbstractMatrix{T}, DT<:AbstractMatrix, LT}
     A  :: AT
-    D  :: DT
+    D₂ :: DT
     lu :: LT    # DiffMatrixLU wrapping A; shares A.coeffs — ldiv! uses this
-    function HelmoltzSolver(D::AbstractMatrix, ::Type{T}=Float64) where {T}
+    function HelmoltzSolver(D₂::AbstractMatrix, ::Type{T}=Float64) where {T}
         # Allocate A as an uninitialised DiffMatrix of element type T with the
-        # same stencil width and grid size as D. A will be overwritten in full
+        # same stencil width and grid size as D₂. A will be overwritten in full
         # on every update! call, so there is no need to zero-initialise it here.
-        A  = similar(D, T)
+        A  = similar(D₂, T)
         lu = DiffMatrixLU(A)    # wraps A; A.coeffs and lu.factors.coeffs alias the same array
-        return new{T, typeof(A), typeof(D), typeof(lu)}(A, D, lu)
+        return new{T, typeof(A), typeof(D₂), typeof(lu)}(A, D₂, lu)
     end
 end
 
@@ -94,7 +94,7 @@ end
 Assemble the system matrix for coefficients `(θ₀, θ₁)` and factorise it
 in-place, preparing `h` for subsequent calls to `solve!`.
 
-The interior rows of `h.A` are set to `θ₀ * h.D - θ₁ * I`, encoding the
+The interior rows of `h.A` are set to `θ₀ * h.D₂ - θ₁ * I`, encoding the
 discretised operator `θ₀ u'' - θ₁ u` at each interior grid point. The first
 and last rows are then overwritten with canonical basis vectors to enforce
 homogeneous-compatible Dirichlet boundary conditions:
@@ -130,12 +130,12 @@ update!(h, 0.0, -1.0)  # identity:        u = -r  (trivial but valid)
 function update!(h::HelmoltzSolver{T}, θ₀::Real, θ₁::Real) where {T}
     N = size(h.A, 1)
 
-    # Build the interior operator θ₀ D - θ₁ I by scaling and copying the
+    # Build the interior operator θ₀ D₂ - θ₁ I by scaling and copying the
     # stencil coefficients, then subtracting θ₁ from each diagonal entry.
     # Operating directly on the underlying Vector avoids the DiffMatrix
     # broadcast machinery (_bc_arg per element) and lets the compiler emit
     # a SIMD-optimised scalar-vector multiply.
-    @inbounds h.A.coeffs .= T(θ₀) .* h.D.coeffs
+    @inbounds h.A.coeffs .= T(θ₀) .* h.D₂.coeffs
     for i in 1:N
         h.A[i, i] -= θ₁
     end
