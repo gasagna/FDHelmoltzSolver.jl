@@ -74,15 +74,17 @@ solve!(h, r, exp(-1), exp(1))      # solve in-place; r is overwritten with u
 
 See also: [`update!`](@ref), [`solve!`](@ref)
 """
-struct HelmoltzSolver{T, AT<:AbstractMatrix{T}, DT<:AbstractMatrix}
-    A::AT
-    D::DT
+struct HelmoltzSolver{T, AT<:AbstractMatrix{T}, DT<:AbstractMatrix, LT}
+    A  :: AT
+    D  :: DT
+    lu :: LT    # DiffMatrixLU wrapping A; shares A.coeffs — ldiv! uses this
     function HelmoltzSolver(D::AbstractMatrix, ::Type{T}=Float64) where {T}
         # Allocate A as an uninitialised DiffMatrix of element type T with the
         # same stencil width and grid size as D. A will be overwritten in full
         # on every update! call, so there is no need to zero-initialise it here.
-        A = similar(D, T)
-        return new{T, typeof(A), typeof(D)}(A, D)
+        A  = similar(D, T)
+        lu = DiffMatrixLU(A)    # wraps A; A.coeffs and lu.factors.coeffs alias the same array
+        return new{T, typeof(A), typeof(D), typeof(lu)}(A, D, lu)
     end
 end
 
@@ -149,6 +151,8 @@ function update!(h::HelmoltzSolver{T}, θ₀::Real, θ₁::Real) where {T}
     # Factorise h.A in-place with a no-pivoting banded LU routine. This
     # overwrites the compact stencil coefficients with the LU factors and
     # prepares the matrix for repeated O(N·WIDTH) triangular solves.
+    # h.lu.factors aliases h.A (same coeffs array), so h.lu is implicitly
+    # updated and ready for ldiv! without any extra copy.
     lu!(h.A)
 
     return nothing
@@ -201,7 +205,7 @@ function solve!(h::HelmoltzSolver, r::AbstractVector, u_l::Real, u_r::Real)
 
     # Solve the banded system in-place using the LU factors stored in h.A.
     # On exit, r holds the solution u at every grid point.
-    ldiv!(h.A, r)
+    ldiv!(h.lu, r)
 
     return r
 end

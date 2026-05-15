@@ -1,43 +1,31 @@
-using Printf
-using FFTW
-using PyPlot; pygui(true)
+@testset "coupled helmoltz solver                " begin
+    # Solve:
+    #   θ₀ u''(x) - θ₁ u(x) = r(x),   x ∈ [-1, 1]
+    #   θ₂ v''(x) - θ₃ v(x) = u(x)
+    #   v(±1) = v'(±1) = 0
+    #
+    # Exact solution:
+    #   β  = -θ₂π² - θ₃
+    #   u  = β cos(πx) - θ₃
+    #   v  = cos(πx) + 1
+    #   r  = (-θ₀βπ² - θ₁β) cos(πx) + θ₁θ₃
 
-@testset "helmoltz solver                        " begin
+    for (θ₀, θ₁, θ₂, θ₃) in ((1.0, 2.0, 1.5, 0.5), (3.0, 1.0, 2.0, 0.25), (0.5, 4.0, 1.0, 1.0))
+        β = -θ₂*π^2 - θ₃
 
-    # solve this problem
-    #       / θ₀ u''(y) - θ₁ u(y)        = r(y)
-    #      |  θ₂ v''(y) - θ₃ v(y) - u(y) = 0
-    #       \ v(±1) = v'(±1) = 0
+        N     = 101
+        width = 7
+        xs    = collect(range(-1, 1; length=N))
 
-    # v = cos(π*y) + 1
-    # u = (-θ₂π^2 - θ₃) * cos(πy) - θ₃ = β * cos(πy) - θ₃
-    # r = (-θ₀βπ^2 - θ₁β) * cos(πy) + θ₁θ₃
+        rfun(x) = (-θ₀*β*π^2 - θ₁*β)*cos(π*x) + θ₁*θ₃
+        vsol(x) = cos(π*x) + 1
 
-    # with these coefficients
-    θ₀, θ₁, θ₂, θ₃ = rand(4)
-    
-    # degree of the polynomial should be enough for all cases
-    P = 21
+        solver = CoupledHelmoltzSolver(xs, width)
+        update!(solver, (θ₀, θ₁, θ₂, θ₃))
 
-    # chebychev points
-    y = cos.(π*(0:P)/P)
+        r = rfun.(xs)
+        solve!(solver, r)
 
-    # functions for the solution
-    β = (-θ₂*π^2 - θ₃)
-    rfun(y) = (-θ₀*β*π^2 - θ₁*β) * cos(π*y) + θ₁*θ₃
-    sol(y) = cos(π*y) + 1
-
-    # coefficients of the chebychev expansion of the function exp(y)
-    r = ChebCoeffs(FFTW.r2r(rfun.(y), FFTW.REDFT00)/P)
-    r[0] /= 2
-
-    # create solver
-    h = CoupledHelmoltzSolver(P)
-
-    # and update coefficients
-    update!(h, (θ₀, θ₁, θ₂, θ₃))
-    solve!(h,  r)
-    r[0] *= 2
-
-    @test norm(FFTW.r2r(r.data/2, FFTW.REDFT00) .- sol.(y)) < 1e-14
+        @test norm(r .- vsol.(xs)) < 1e-7
+    end
 end
