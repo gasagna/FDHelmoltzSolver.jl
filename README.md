@@ -1,6 +1,6 @@
 # FDHelmoltzSolver.jl
 
-Fast in-place solvers for one-dimensional Helmholtz boundary value problems using compact finite-difference stencils from [FDGrids.jl](https://github.com/gasagna/FDGrids.jl).
+Fast in-place solvers for one-dimensional Helmholtz boundary value problems discretised with high-order banded finite-difference operators from [FDGrids.jl](https://github.com/gasagna/FDGrids.jl).
 
 ## Solvers
 
